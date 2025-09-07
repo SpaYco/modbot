@@ -1,6 +1,9 @@
+
 # ModBot
 
-AI-powered Reddit moderation bot for Ruby. Supports event-based moderation for posts, comments, and reports using LLMs (OpenAI, Anthropic).
+AI-powered Reddit moderation bot for Ruby. Register moderation events in code—no database required! Works in plain Ruby or Rails.
+
+Supports event-based moderation for posts, comments, and reports using LLMs (OpenAI, Anthropic).
 
 ## Installation
 
@@ -23,19 +26,62 @@ And then execute:
   bundle install
 ```
 
-2. **Configure your database:**
 
-- Copy `.env.example` to `.env` and set your PostgreSQL URL if needed.
-- By default, it uses `postgres://localhost/modbot`.
+## Usage
 
-3. **Run database migrations:**
+### Plain Ruby
 
-```sh
-  bundle exec rake db:migrate
+Create a file (e.g., `my_bot.rb`):
+
+```ruby
+require 'modbot'
+
+ModBot.configure do |config|
+  config.reddit_client_id = "..."
+  config.reddit_secret = "..."
+  config.reddit_username = "..."
+  config.reddit_password = "..."
+  config.openai_api_key = "..." # or config.anthropic_api_key = "..."
+  config.model = "gpt-4" # or "claude-3"
+end
+
+ModBot::Reddit.on_post(subreddit: "yoursubreddit", prompt: "Is this spam?", interval: "5m") do |post, ai_response|
+  # handle post moderation
+end
+
+ModBot::Reddit.on_comment(subreddit: "yoursubreddit", prompt: "Is this a helpful comment?", interval: "1h") do |comment, ai_response|
+  # handle comment moderation
+end
+
+# Start polling (or use your own runner)
+# ModBot::Reddit.start_polling(subreddit: "yoursubreddit", interval: 30)
 ```
 
-4. **Configure Reddit and LLM credentials:**
-   In your Ruby script:
+### In Rails
+
+Add to your Gemfile:
+
+```ruby
+gem 'modbot', github: 'SpaYco/modbot'
+```
+
+Then in an initializer (e.g., `config/initializers/modbot.rb`):
+
+```ruby
+ModBot.configure do |config|
+  config.reddit_client_id = "..."
+  config.reddit_secret = "..."
+  config.reddit_username = "..."
+  config.reddit_password = "..."
+  config.openai_api_key = "..."
+  config.model = "gpt-4"
+end
+
+# Register events in any file loaded by Rails (e.g., in `config/initializers/modbot_events.rb`):
+ModBot::Reddit.on_post(subreddit: "yoursubreddit", prompt: "Is this spam?", interval: "5m") do |post, ai_response|
+  # handle post moderation
+end
+```
 
 ```ruby
   require 'modbot'
@@ -54,34 +100,20 @@ And then execute:
 
 Register moderation events for posts, comments, or reports. Each event requires a subreddit, prompt, and interval (e.g., '5m', '1d').
 
+See usage examples above for both plain Ruby and Rails.
+
+
+## Running the Bot
+
+You can start polling in your script with:
+
 ```ruby
-ModBot::Reddit.on_post(subreddit: "yoursubreddit", prompt: "Is this spam?", interval: "5m") do |post, ai_response|
-  # handle post moderation
-end
-
-ModBot::Reddit.on_comment(subreddit: "yoursubreddit", prompt: "Is this a helpful comment?", interval: "1h") do |comment, ai_response|
-  # handle comment moderation
-end
+ModBot::Reddit.start_polling(subreddit: "yoursubreddit", interval: 30)
 ```
 
-## Running the Bot (Cron)
+Or build your own runner/cron logic as needed.
 
-The gem provides a runner script to process events efficiently. Add this to your crontab to run every minute:
-
-```
-* * * * * cd /path/to/your/project && bundle exec ruby bin/modbot_cron
-```
-
-This script will:
-
-- Check which events are due (based on their interval)
-- Group by subreddit and event type to minimize API calls
-- Fetch new posts/comments, call the LLM, and trigger your handlers
-
-## Database
-
-- Uses PostgreSQL for event and seen-item persistence.
-- Configure via the `MODBOT_DATABASE_URL` environment variable or `.env` file.
+**No database required!** All events are registered in memory when your code is loaded.
 
 ## Links
 

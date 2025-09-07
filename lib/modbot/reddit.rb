@@ -88,23 +88,21 @@ module ModBot
         )
       end
 
-      # Generic event registration for any platform
+      # Generic event registration for any platform (in-memory only)
       def register_event(platform:, resource_type:, resource:, event_type:, prompt:, interval:, handler:)
-        ModBot::Models::Event.create(
+        @event_handlers[event_type.to_sym] << OpenStruct.new(
           platform: platform,
           resource_type: resource_type,
           resource: resource,
           event_type: event_type.to_s,
           prompt: prompt,
           interval: interval,
-          handler_code: Marshal.dump(handler),
-          created_at: Time.now,
-          updated_at: Time.now
+          handler: handler
         )
       end
 
       def event_handlers
-        ModBot::Models::Event.all
+        @event_handlers
       end
     end
   end
