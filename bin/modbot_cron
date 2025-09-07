@@ -1,0 +1,66 @@
+# frozen_string_literal: true
+
+require_relative '../lib/modbot'
+require 'redd'
+require 'set'
+
+# This script is intended to be run by cron every minute
+# It checks which events are due, groups them by subreddit and event type, and processes them
+
+DB = ModBot::DB.db
+
+now = Time.now
+
+due_events = ModBot::Models::Event.all.select do |event|
+  last = event.last_checked || Time.at(0)
+  interval = case event.interval
+             when /m$/ then event.interval.to_i * 60
+             when /h$/ then event.interval.to_i * 3600
+             when /d$/ then event.interval.to_i * 86_400
+             else 300 # default 5m
+             end
+  now - last >= interval
+end
+
+grouped = due_events.group_by { |e| [e.subreddit, e.event_type] }
+
+client = Redd.it(
+  user_agent: 'modbot',
+  client_id: ModBot::Config.reddit_client_id,
+  secret: ModBot::Config.reddit_secret,
+  username: ModBot::Config.reddit_username,
+  password: ModBot::Config.reddit_password
+)
+
+# For each group, fetch new items and process
+
+grouped.each do |(subreddit, event_type), events|
+  seen_ids = ModBot::Models::SeenItem.where(subreddit: subreddit, event_type: event_type).select_map(:item_id).to_set
+  case event_type
+  when 'post'
+    client.subreddit(subreddit).new(limit: 20).each do |post|
+      next if seen_ids.include?(post.id)
+
+      events.each do |event|
+        handler = Marshal.load(event.handler_code)
+        ai_response = ModBot::LLM.ask(event.prompt + "\n" + post.title.to_s + "\n" + post.selftext.to_s)
+        handler.call(post, ai_response)
+      end
+      ModBot::Models::SeenItem.create(item_id: post.id, event_type: 'post', subreddit: subreddit, seen_at: now)
+    end
+  when 'comment'
+    client.subreddit(subreddit).comments(limit: 20).each do |comment|
+      next if seen_ids.include?(comment.id)
+
+      events.each do |event|
+        handler = Marshal.load(event.handler_code)
+        ai_response = ModBot::LLM.ask(event.prompt + "\n" + comment.body.to_s)
+        handler.call(comment, ai_response)
+      end
+      ModBot::Models::SeenItem.create(item_id: comment.id, event_type: 'comment', subreddit: subreddit, seen_at: now)
+    end
+    # Add report support here if needed
+  end
+  # Update last_checked for all events in this group
+  events.each { |event| event.update(last_checked: now, updated_at: now) }
+end
