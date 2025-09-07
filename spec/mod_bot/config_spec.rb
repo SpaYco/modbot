@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'modbot/config'
+require 'mod_bot/config'
 
 describe ModBot::Config do
   it 'allows setting and getting config values' do

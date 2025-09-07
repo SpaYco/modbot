@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'modbot/events/base_event'
+require 'mod_bot/events/base_event'
 
 describe ModBot::Events::BaseEvent do
   it 'stores prompt and handler' do

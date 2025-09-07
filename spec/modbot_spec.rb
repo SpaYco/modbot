@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'modbot'
+require 'mod_bot'
 
 describe ModBot do
   it 'has a version number' do

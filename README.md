@@ -34,7 +34,7 @@ And then execute:
 Create a file (e.g., `my_bot.rb`):
 
 ```ruby
-require 'modbot'
+require 'mod_bot'
 
 ModBot.configure do |config|
   config.reddit_client_id = "..."
@@ -84,7 +84,7 @@ end
 ```
 
 ```ruby
-  require 'modbot'
+  require 'mod_bot'
 
   ModBot.configure do |config|
     config.reddit_client_id = "..."

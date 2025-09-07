@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-# Require external gems for global availability
+# Main entry point for the ModBot gem
 require 'base64'
 require 'redd'
 require 'openai'
 require 'anthropic'
-require 'sequel'
+require 'ostruct'
 require 'zeitwerk'
 
 loader = Zeitwerk::Loader.for_gem

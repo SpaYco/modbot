@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'spec_helper'
-require 'modbot/llm'
+require 'mod_bot/llm'
 
 RSpec.describe ModBot::LLM do
   it 'selects OpenAI for non-claude models' do

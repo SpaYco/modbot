@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-require_relative 'lib/modbot/version'
+require_relative 'lib/mod_bot/version'
 
 Gem::Specification.new do |spec|
   spec.name          = 'modbot'
